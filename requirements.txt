@@ -20,3 +20,5 @@ opencv-python==4.7.0.68
 requests==2.28.2       # For making HTTP requests (e.g., if you pull data from web)
 pytube==15.0.0         # If you plan to download YouTube videos
 tqdm==4.65.0           # Progress bar for loops and data processing
+
+yt-dlp>=2023.11.16
