@@ -15,6 +15,7 @@ seaborn==0.12.2
 
 # Image/video processing
 opencv-python==4.7.0.68
+mediapipe==0.10.21
 
 # Additional utilities (optional, remove if you don't need them)
 requests==2.28.2       # For making HTTP requests (e.g., if you pull data from web)
