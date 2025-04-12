@@ -105,7 +105,7 @@ sns.scatterplot(
     ax=ax_top
 )
 # ax_top.set_title("Smile Types Identified by Clustering", fontsize=18)
-ax_top.set_title("Unlabelled Smiles Clusters (k=7)", fontsize=18)
+ax_top.set_title("Smile Clusters with k = 7 (AUs features + PCA)", fontsize=18)
 ax_top.set_xlabel("Principal Component 1", fontsize=14)
 ax_top.set_ylabel("Principal Component 2", fontsize=14)
 ax_top.legend(title="Cluster", fontsize=10)
