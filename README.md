@@ -1,4 +1,5 @@
 # Contextualizing Smiles: Clustering Facial Expressions using AU and Landmark Features
+CMPT 419/724 Affective Computing Spring 2025 - Final Project (Due April 11, 2025)
 
 This project explores unsupervised clustering of human smiles using two types of facial features:
 1. Facial Landmarks extracted using MediaPipe FaceMesh
