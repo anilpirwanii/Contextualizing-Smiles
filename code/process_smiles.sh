@@ -15,17 +15,17 @@ awk -F, 'NR>1 {
     print "Duration: " duration
     print "Output name: " output_name
     
-    cmd = "if [ -f \"data/smile_dataset/" output_name ".mp4\" ]; then "
-    cmd = cmd "echo \"File data/smile_dataset/" output_name ".mp4 already exists, skipping...\"; "
+    cmd = "if [ -f \"../data/smile_dataset/" output_name ".mp4\" ]; then "
+    cmd = cmd "echo \"File ../data/smile_dataset/" output_name ".mp4 already exists, skipping...\"; "
     cmd = cmd "else "
     cmd = cmd "echo \"Processing: " output_name "\"; "
     cmd = cmd "yt-dlp -f \"best[ext=mp4]\" \"" url "\" -o \"temp_video.mp4\"; "
-    cmd = cmd "ffmpeg -i \"temp_video.mp4\" -ss " start_time " -t " duration " -c:v libx264 -c:a aac \"data/smile_dataset/" output_name ".mp4\"; "
+    cmd = cmd "ffmpeg -i \"temp_video.mp4\" -ss " start_time " -t " duration " -c:v libx264 -c:a aac \"../data/smile_dataset/" output_name ".mp4\"; "
     cmd = cmd "rm \"temp_video.mp4\"; "
     cmd = cmd "echo \"Finished processing: " output_name "\"; "
     cmd = cmd "fi"
     
     system(cmd)
-}' smile_videos.csv
+}' ../data/smile_videos.csv
 
 echo "All videos processed!"
