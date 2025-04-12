@@ -68,14 +68,15 @@ This project meets the original objectives outlined in the proposal:
 - Implemented AU-based and landmark-based feature clustering of different types of smile expressions.
 - Used elbow and silhouette scores to evaluate optimal number of clusters.
 - Visualized representative images for each cluster to evaluate clustering performance.
-- Compared clustering performance between raw geometric (landmark) and abstracted (AU) features
-- Labelled clusters based on representative images and used Inter-Rater Agreement to agree on CLuster-Label assignments. 
+- Compared clustering performance between raw geometric (landmark) and abstracted (AU) features based on visualizations and representative images in each cluster.
+- Labelled clusters based on representative images and used Inter-Rater Agreement to agree on Cluster-Label assignments.
+- With more time, we would have like to explore different clustering techniques like DBSCAN and U-MAP to analyze clustering performance.
 
 ### Changes from proposal:
 - Dropped DBSCAN in favor of KMeans due to clearer cluster control and visualization
 - Extract top_3 smile frames using MediaPipe FaceMesh instead of Haar Cascades for accurate and representative smile frames for each video
 - Used MediaPipe instead of OpenFace for landmarks due to ease of setup
-- Focused on deeper visual analysis over real-time inference
+- Focused on deeper visual analysis over real-time inference, to help understand trends in facial activation between different types of smiles.
 
 ---
 ## Notes for TA
