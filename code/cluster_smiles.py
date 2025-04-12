@@ -11,6 +11,50 @@ import os
 from PIL import Image
 import glob
 
+def select_representative_images(cluster_interpretations):
+    """
+    Manually select representative images for each cluster.
+    
+    Returns a dictionary with cluster IDs as keys and lists of image filenames as values.
+    """
+    selected_images = {
+        0: [  # Duchenne Smile
+            "anil_clip_026_1.jpg",
+            "asmita_clip_029_1.jpg",
+            "sana_clip_053_2.jpg"
+        ],
+        1: [  # Polite Smile
+            "anil_clip_005_3.jpg",
+            "sana_clip_029_3.jpg",
+            "sana_clip_054_2.jpg"
+        ],
+        2: [  # Nervous Smile
+            "anil_clip_010_3.jpg",
+            "anil_clip_021_1.jpg",
+            "anil_clip_023_1.jpg"
+        ],
+        3: [  # Dubious Smile
+            "asmita_clip_028_1.jpg",
+            "asmita_clip_006_2.jpg",
+            "sana_clip_041_1.jpg"
+        ],
+        4: [  # Mixed Expressions
+            "anil_clip_031_2.jpg",
+            "asmita_clip_003_2.jpg",
+            "anil_clip_033_2.jpg"
+        ]
+    }
+    return selected_images
+
+def get_specific_images(df, selected_images):
+    specific_images = []
+    for cluster_id, image_names in selected_images.items():
+        for image_name in image_names:
+            image_row = df[df['image'] == image_name].copy()
+            image_row['kmeans_cluster'] = cluster_id
+            specific_images.append(image_row)
+    return pd.concat(specific_images)
+
 # Load AU features from openface_output dataset
 df = pd.read_csv("../data/openface_output/smile_frames.csv")
 
@@ -21,7 +65,6 @@ X = df[au_features]
 # Normalize features
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
-
 
 # Get list of image filenames, sorted alphabetically
 image_files = sorted(glob.glob("../data/smile_frames/*.jpg"))
@@ -77,121 +120,74 @@ X_pca = pca.fit_transform(X_scaled)
 df['pc1'] = X_pca[:, 0]
 df['pc2'] = X_pca[:, 1]
 
-# # Map numeric clusters to meaningful labels
-# cluster_interpretations = {
-#     0: "Genuine/Charming",
-#     1: "Polite/Social",
-#     2: "Nervous/Awkward",
-#     3: "Sarcastic",
-#     4: "Dubious/Evil"
-# }
+# Map numeric clusters to meaningful labels - based on experimental analysis. 
+cluster_interpretations = {
+    0: "Duchenne Smile",
+    1: "Polite Smile",
+    2: "Nervous Smile", 
+    3: "Dubious Smile",
+    4: "Mixed Expressions"
+}
 
-# df['smile_type'] = df['kmeans_cluster'].map(cluster_interpretations)
+df['smile_type'] = df['kmeans_cluster'].map(cluster_interpretations)
 
 # Create a new figure with grid layout
 fig = plt.figure(figsize=(15, 10))
 gs = gridspec.GridSpec(2, 1, height_ratios=[3, 1])
 
-# Top section: the cluster plot
+# Top section: the clustering visualization plot
 ax_top = plt.subplot(gs[0])
+
 sns.scatterplot(
     data=df, 
     x='pc1', 
     y='pc2', 
-    hue='kmeans_cluster',
+    hue='smile_type',
     palette='tab10',
     s=80,
     alpha=0.7,
     ax=ax_top
 )
-# ax_top.set_title("Smile Types Identified by Clustering", fontsize=18)
-ax_top.set_title("Smile Clusters with k = 7 (AUs features + PCA)", fontsize=18)
+
+ax_top.set_title("Smile Clusters with k=7 (Action Units + PCA)", fontsize=18)
 ax_top.set_xlabel("Principal Component 1", fontsize=14)
 ax_top.set_ylabel("Principal Component 2", fontsize=14)
-ax_top.legend(title="Cluster", fontsize=10)
+ax_top.legend(title="Smile Type", fontsize=10)
 
-# === Example Image per Cluster ===
-ax_bottom = plt.subplot(gs[1])
-ax_bottom.axis("off")
-img_grid = gridspec.GridSpecFromSubplotSpec(k, 3, subplot_spec=gs[1], wspace=0.1)
+# Example Image per Cluster
+plt.subplot(gs[1])
+plt.axis("off")
+img_grid = gridspec.GridSpecFromSubplotSpec(len(cluster_interpretations), 3, subplot_spec=gs[1], wspace=0.1, hspace=0.2)
 
 # Sample 3 images per cluster
-example_images = (
-    df.groupby("kmeans_cluster")
-    .apply(lambda g: g.sample(3, random_state=42))
-    .reset_index(drop=True)
-)
+selected_images = select_representative_images(cluster_interpretations)
+example_images = get_specific_images(df, selected_images)
 
-for i, row in example_images.iterrows():
-    cluster_id = int(row["kmeans_cluster"])
-    col = i % 3  # 0, 1, 2
-    ax_img = plt.subplot(img_grid[cluster_id, col])
-    img_path = os.path.join("../data/smile_frames", row["image"])
-    try:
-        img = Image.open(img_path)
-        ax_img.imshow(np.array(img))
+for cluster_id, smile_type in cluster_interpretations.items():
+    # Filter images for this specific cluster
+    cluster_images = example_images[example_images['kmeans_cluster'] == cluster_id]
+    
+    for col in range(3):
+        ax_img = plt.subplot(img_grid[cluster_id, col])
+        
+        if col < len(cluster_images):
+            row = cluster_images.iloc[col]
+            img_path = os.path.join("../data/smile_frames", row["image"])
+            try:
+                img = Image.open(img_path)
+                ax_img.imshow(np.array(img))
+            except Exception as e:
+                print(f"Error loading {img_path}: {e}")
+                ax_img.text(0.5, 0.5, "Image Not Found", ha="center", va="center")
+        
+        ax_img.axis("off")
+        
+        # Add cluster label
         if col == 0:
-            ax_img.set_title(f"Cluster {cluster_id}", fontsize=10, loc='left')
-    except Exception as e:
-        print(f"Error loading {img_path}: {e}")
-        ax_img.text(0.5, 0.5, f"Cluster {cluster_id}", ha="center", va="center")
-    ax_img.axis("off")
+            ax_img.text(-0.5, 0.5, smile_type, transform=ax_img.transAxes, 
+                        ha='right', va='center', fontsize=10)
 
 # Save visualizations in figures/
 plt.tight_layout()
 plt.savefig("../figures/clusters_k7_visualization.png", dpi=300)
 print("Visualization saved to ../figures/clusters_k7_visualization.png")
-
-# # Create a legend that maps clusters to interpretations
-# legend_elements = []
-# for i, (cluster_id, smile_type) in enumerate(cluster_interpretations.items()):
-#     color = plt.cm.tab10(i)
-#     legend_elements.append(plt.Line2D([0], [0], marker='o', color='w', 
-#                           label=f"Cluster {cluster_id}: {smile_type}",
-#                           markerfacecolor=color, markersize=10))
-
-# # Add the interpretation legend
-# ax_top.legend(handles=legend_elements, title="Interpreted Clusters", 
-#               loc="upper right", fontsize=10)
-
-# # Bottom section: example images from each cluster
-# ax_bottom = plt.subplot(gs[1])
-# ax_bottom.axis('off')  # Hide axes for the image section
-
-# # Create a grid for the images
-# img_grid = gridspec.GridSpecFromSubplotSpec(1, 5, subplot_spec=gs[1], wspace=0.1)
-
-# # Get all image files from smile_frames directory
-# image_files = glob.glob("../data/smile_frames/*.jpg") + glob.glob("../data/smile_frames/*.png")
-
-# # Manually select one example image for each cluster type
-# example_images = {
-#     0: image_files[0] if len(image_files) > 0 else None,    # Genuine/Charming
-#     1: image_files[1] if len(image_files) > 1 else None,    # Polite/Social
-#     2: image_files[2] if len(image_files) > 2 else None,    # Nervous/Awkward
-#     3: image_files[3] if len(image_files) > 3 else None,    # Sarcastic
-#     4: image_files[4] if len(image_files) > 4 else None,    # Dubious/Evil
-# }
-
-# # Display images or labels
-# for i, cluster_id in enumerate(range(5)):
-#     ax_img = plt.subplot(img_grid[i])
-    
-#     if cluster_id in example_images and example_images[cluster_id] is not None:
-#         try:
-#             img = Image.open(example_images[cluster_id])
-#             ax_img.imshow(np.array(img))
-#             ax_img.set_title(f"{cluster_interpretations[cluster_id]}", fontsize=12)
-#         except Exception as e:
-#             print(f"Error loading image for cluster {cluster_id}: {e}")
-#             ax_img.text(0.5, 0.5, cluster_interpretations[cluster_id], 
-#                         ha='center', va='center', fontsize=12)
-#     else:
-#         ax_img.text(0.5, 0.5, cluster_interpretations[cluster_id], 
-#                    ha='center', va='center', fontsize=12)
-#     ax_img.axis('off')
-
-# plt.tight_layout()
-# plt.savefig("../figures/clusters_with_examples.png", dpi=300, bbox_inches='tight')
-# print("Visualization saved to ../figures/clusters_with_examples.png")
-# print(f"Found {len(image_files)} image files in smile_frames directory")
